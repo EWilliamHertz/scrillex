@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String         @id @default(uuid())
+  username     String         @unique
+  passwordHash String
+  createdAt    DateTime       @default(now())
+  collection   CardInstance[]
+}
+
+model CardInstance {
+  id         String   @id @default(uuid())
+  scryfallId String
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  quantity   Int      @default(1)
+  set        String?
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, scryfallId])
+}
+
+model MtgSet {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  cardCount Int
+  iconUri   String?
+  releasedAt DateTime?
+}
