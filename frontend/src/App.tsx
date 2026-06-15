@@ -8,7 +8,6 @@ const Landing = () => {
   const [dailyCard, setDailyCard] = useState<any>(null);
 
   useEffect(() => {
-    // Fetch a rotating random card from Scryfall API on mount
     fetch('https://api.scryfall.com/cards/random')
       .then(res => res.json())
       .then(data => setDailyCard(data))
@@ -22,55 +21,117 @@ const Landing = () => {
         <p style={{ fontSize: '1.2rem', color: 'var(--text)' }}>
           The modern Magic: The Gathering collection tracker.
         </p>
-        <Link to="/login" className="btn-primary">Enter the Multiverse</Link>
+        <Link to="/auth" className="btn-primary">Enter the Multiverse</Link>
       </header>
       
       {dailyCard && dailyCard.image_uris && (
         <div className="daily-card-showcase">
           <h2>Card of the Day</h2>
           <img src={dailyCard.image_uris.normal} alt={dailyCard.name} />
-          <p style={{ marginTop: '12px', fontWeight: 'bold' }}>
-            {dailyCard.name}
-          </p>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text)' }}>
-            {dailyCard.set_name}
-          </p>
+          <div style={{ marginTop: '16px' }}>
+            <p style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{dailyCard.name}</p>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text)' }}>
+              {dailyCard.set_name} • Illustrated by <strong>{dailyCard.artist}</strong>
+            </p>
+          </div>
         </div>
       )}
     </div>
   );
 };
 
-// --- Login Page ---
-const Login = () => {
+// --- Auth Page (Login / Register Toggle) ---
+const Auth = () => {
   const navigate = useNavigate();
+  const [isLogin, setIsLogin] = useState(true);
   
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
-    // Placeholder for actual backend /api/auth integration
     navigate('/dashboard');
   };
 
   return (
     <div className="auth-container">
-      <h2 style={{ marginBottom: '30px' }}>Login or Register</h2>
+      <h2 style={{ marginBottom: '30px' }}>{isLogin ? 'Access Your Collection' : 'Register for Scrillex'}</h2>
       <form onSubmit={handleAuth}>
+        {!isLogin && <input type="email" placeholder="Email Address" required />}
         <input type="text" placeholder="Username" required />
         <input type="password" placeholder="Password" required />
-        <button type="submit" className="btn-primary">Access Collection</button>
+        <button type="submit" className="btn-primary">
+          {isLogin ? 'Login' : 'Create Account'}
+        </button>
       </form>
+      <button className="btn-link" onClick={() => setIsLogin(!isLogin)}>
+        {isLogin ? "Don't have an account? Register here." : "Already have an account? Login here."}
+      </button>
     </div>
   );
 };
 
-// --- Dashboard Component ---
+// --- Dashboard Sub-Components ---
+const SetTracker = () => (
+  <div className="stats-panel">
+    <h3 style={{ marginBottom: '20px' }}>Set Collection Progress</h3>
+    <div className="stat-card">
+      <div className="stat-header">
+        <h4>Duskmourn: House of Horror (DSK)</h4>
+        <span>72%</span>
+      </div>
+      <div className="progress-bar"><div className="fill" style={{ width: '72%' }}></div></div>
+      <p style={{ fontSize: '0.9rem', color: 'var(--text)' }}>198 / 276 Cards Collected</p>
+    </div>
+    <div className="stat-card">
+      <div className="stat-header">
+        <h4>Bloomburrow (BLB)</h4>
+        <span>45%</span>
+      </div>
+      <div className="progress-bar"><div className="fill" style={{ width: '45%' }}></div></div>
+      <p style={{ fontSize: '0.9rem', color: 'var(--text)' }}>120 / 266 Cards Collected</p>
+    </div>
+  </div>
+);
+
+const IllustratorTracker = () => {
+  const [artist, setArtist] = useState('');
+  
+  return (
+    <div className="stats-panel">
+      <h3 style={{ marginBottom: '20px' }}>Illustrator Collection Tracker</h3>
+      <input 
+        type="text" 
+        className="search-box" 
+        placeholder="Search for an artist (e.g., Rebecca Guay, John Avon)..." 
+        value={artist}
+        onChange={(e) => setArtist(e.target.value)}
+        style={{ width: '100%', marginBottom: '24px' }} 
+      />
+      <div className="stat-card">
+        <div className="stat-header">
+          <h4>John Avon</h4>
+          <span>88%</span>
+        </div>
+        <div className="progress-bar"><div className="fill" style={{ width: '88%' }}></div></div>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text)' }}>257 / 293 Cards Collected</p>
+      </div>
+      <div className="stat-card">
+        <div className="stat-header">
+          <h4>Terese Nielsen</h4>
+          <span>31%</span>
+        </div>
+        <div className="progress-bar"><div className="fill" style={{ width: '31%' }}></div></div>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text)' }}>45 / 145 Cards Collected</p>
+      </div>
+    </div>
+  );
+};
+
+// --- Main Dashboard Layout ---
 const Dashboard = () => {
+  const [activeTab, setActiveTab] = useState<'sets' | 'illustrators' | 'bulk'>('sets');
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      alert(`Parsed ${file.name} successfully! Simulating CSV bulk add...`);
-      // Future: parse with PapaParse and post to /api/collection endpoint
-    }
+    if (file) alert(`Parsed ${file.name} successfully! Simulating CSV bulk add...`);
   };
 
   return (
@@ -80,47 +141,41 @@ const Dashboard = () => {
         <Link to="/" style={{ color: 'var(--text)', textDecoration: 'none' }}>Logout</Link>
       </nav>
       
-      <div className="dash-content">
-        <div className="actions-panel">
-          <input 
-            type="text" 
-            placeholder="Search for any MTG card..." 
-            className="search-box" 
-            style={{ flex: 1, minWidth: '250px' }} 
-          />
-          <div className="upload-box">
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-              Import Bulk CSV
-            </label>
-            <input type="file" accept=".csv" onChange={handleFileUpload} />
-          </div>
-        </div>
+      <div className="dashboard-layout">
+        <aside className="sidebar">
+          <button 
+            className={activeTab === 'sets' ? 'active' : ''} 
+            onClick={() => setActiveTab('sets')}
+          >
+            📦 Set Tracker
+          </button>
+          <button 
+            className={activeTab === 'illustrators' ? 'active' : ''} 
+            onClick={() => setActiveTab('illustrators')}
+          >
+            🎨 Illustrator Tracker
+          </button>
+          <button 
+            className={activeTab === 'bulk' ? 'active' : ''} 
+            onClick={() => setActiveTab('bulk')}
+          >
+            ➕ Bulk Import (CSV)
+          </button>
+        </aside>
 
-        <div className="stats-panel">
-          <h3>Collection Progress</h3>
-          
-          <div className="stat-card">
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <h4>Innistrad: Midnight Hunt (MID)</h4>
-              <span>45%</span>
+        <main className="dash-content">
+          {activeTab === 'sets' && <SetTracker />}
+          {activeTab === 'illustrators' && <IllustratorTracker />}
+          {activeTab === 'bulk' && (
+            <div className="upload-box">
+              <h3 style={{ marginBottom: '10px' }}>Import Bulk CSV</h3>
+              <p style={{ marginBottom: '16px', color: 'var(--text)' }}>
+                Upload your collection lists from DragonShield, TCGPlayer, or Deckbox to automatically update your Set and Illustrator progress.
+              </p>
+              <input type="file" accept=".csv" onChange={handleFileUpload} />
             </div>
-            <div className="progress-bar">
-              <div className="fill" style={{ width: '45%' }}></div>
-            </div>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text)' }}>124 / 277 Cards Collected</p>
-          </div>
-
-          <div className="stat-card">
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <h4>All Origins & Sets Overall</h4>
-              <span>12%</span>
-            </div>
-            <div className="progress-bar">
-              <div className="fill" style={{ width: '12%' }}></div>
-            </div>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text)' }}>3,400 / 28,000+ Cards Collected</p>
-          </div>
-        </div>
+          )}
+        </main>
       </div>
     </div>
   );
@@ -132,7 +187,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/auth" element={<Auth />} />
         <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </Router>
